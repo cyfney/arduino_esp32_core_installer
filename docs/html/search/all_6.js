@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['使用方法_0',['使用方法',['../index.html#autotoc_md2',1,'']]]
+  ['解压_0',['解压',['../index.html#autotoc_md4',1,'']]]
 ];
