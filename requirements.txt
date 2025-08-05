@@ -1,0 +1,4 @@
+pyinstaller==5.13.2
+colorama==0.4.6
+pySerial==3.5
+pywin32==310

@@ -1,0 +1,7 @@
+Arduino ESP32 Core 自动安装工具
+
+1. 关闭所有Arduino IDE进程
+
+2. 双击arduino_esp32_core_installer.vX.X.X.exe，安装进程随即启动。此时，请您耐心等待，安装程序会自动完成一系列复杂的安装操作，期间无需您进行额外的手动干预。
+
+3. 安装成功会打印"Installation succeeded"，然后关闭程序，正常使用Arduino IDE即可。

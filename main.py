@@ -4,58 +4,38 @@ import sys
 import traceback
 import colorama
 from log import log
-
-version = "1.0.1"
+from pathlib import Path
+import win32api
+import win32event
 
 
 def install():
+    log(f"workspace: {Path().absolute()}")
 
-    if getattr(sys, "frozen", False):
-        workspace = os.path.dirname(sys.executable)
-    else:
-        workspace = os.path.dirname(os.path.abspath(__file__))
-
-    log(f"workspace: {workspace}")
-
-    arduino_cli_path = os.path.join(workspace, "bin", "arduino-cli.exe")
+    arduino_cli_path = Path() / "bin" / "arduino-cli.exe"
 
     log(f"arduino cli path: {arduino_cli_path}")
 
     log("core esp32:esp32 uninstalling")
-    subprocess.run(
-        [arduino_cli_path, "core", "uninstall", "esp32:esp32"], check=False, shell=True
-    )
+    subprocess.run([arduino_cli_path, "core", "uninstall", "esp32:esp32"], check=False, shell=True)
 
-    package_index_json_path = os.path.join(
-        os.getenv("LOCALAPPDATA"), "Arduino15", "package_index.json"
-    )
+    package_index_json_path = Path(os.getenv("LOCALAPPDATA")) / "Arduino15" / "package_index.json"
+    log("removing package_index.json")
+    package_index_json_path.unlink(missing_ok=True)
 
-    if os.path.exists(package_index_json_path):
-        log("removing package_index.json")
-        os.remove(package_index_json_path)
+    subprocess.run([arduino_cli_path, "core", "search", "esp32:esp32"], check=True, shell=True)
 
     log("core list")
     subprocess.run([arduino_cli_path, "core", "list"], check=True, shell=True)
 
     log("modifying package_index.json")
-    with open(
-        package_index_json_path,
-        "r",
-        encoding="utf-8",
-    ) as f:
-        replaced_data = f.read().replace("https://github.com/", "https://bgithub.xyz/")
-
-    with open(
-        package_index_json_path,
-        "w",
-        encoding="utf-8",
-    ) as f:
-        f.write(replaced_data)
+    with package_index_json_path.open("r+", encoding="utf-8") as f:
+        content = f.read().replace("https://github.com/", "https://gh-proxy.com/https://github.com/")
+        f.seek(0)
+        f.write(content)
 
     log("core esp32:esp32 installing")
-    subprocess.run(
-        [arduino_cli_path, "core", "install", "esp32:esp32"], check=True, shell=True
-    )
+    subprocess.run([arduino_cli_path, "core", "install", "esp32:esp32"], check=True, shell=True)
 
     log("core list")
     subprocess.run([arduino_cli_path, "core", "list"], check=True, shell=True)
@@ -63,7 +43,9 @@ def install():
     log("core esp32:esp32 install completed")
 
 
-logo = """
+VERSION = "1.1.0"
+
+LOGO = """
  ██████╗██╗   ██╗███████╗███╗   ██╗███████╗██╗   ██╗
 ██╔════╝╚██╗ ██╔╝██╔════╝████╗  ██║██╔════╝╚██╗ ██╔╝
 ██║      ╚████╔╝ █████╗  ██╔██╗ ██║█████╗   ╚████╔╝ 
@@ -72,19 +54,22 @@ logo = """
  ╚═════╝   ╚═╝   ╚═╝     ╚═╝  ╚═══╝╚══════╝   ╚═╝ 
 """
 
-title = f"""
+TITLE = f"""
 Arduino ESP32 Core Installer
-version: {version}
+version: {VERSION}
 """
 
 try:
 
     colorama.init(autoreset=True)
-    print(colorama.Fore.CYAN + logo)
-    print(colorama.Fore.YELLOW + title)
+    print(colorama.Fore.CYAN + LOGO)
+    print(colorama.Fore.YELLOW + TITLE)
     log(f"platform: {sys.platform}")
     if not sys.platform.startswith("win32"):
         raise Exception(f"unsupport platform: {sys.platform}")
+    mutex = win32event.CreateMutex(None, False, "cyfney_arduino_esp32_core_installer")
+    if win32api.GetLastError() == 183:
+        raise RuntimeError("检测到程序已在运行，请关闭其他实例后重试")
     install()
     log(colorama.Fore.GREEN + "Installation succeeded")
 except Exception:
